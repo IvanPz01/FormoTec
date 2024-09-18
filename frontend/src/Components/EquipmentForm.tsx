@@ -31,7 +31,6 @@ const EquipmentForm: React.FC<EquipmentFormProps> = ({ onSuccess, equipment }) =
       setLocation(equipment.location);
       setAcquisitionDate(equipment.acquisitionDate);
     } else {
-      // Reset form fields if no equipment is provided (for adding new equipment)
       setName('');
       setDescription('');
       setStatus('');

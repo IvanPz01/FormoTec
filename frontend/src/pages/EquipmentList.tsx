@@ -16,7 +16,7 @@ const EquipmentList: React.FC = () => {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [showForm, setShowForm] = useState<boolean>(false);
-  const [formEquipment, setFormEquipment] = useState<Equipment | null>(null); // Equipo para editar
+  const [formEquipment, setFormEquipment] = useState<Equipment | null>(null);
 
   useEffect(() => {
     const fetchEquipments = async () => {
@@ -65,7 +65,7 @@ const EquipmentList: React.FC = () => {
   };
 
   const handleAdd = () => {
-    setFormEquipment(null); // Null cuando se está agregando un nuevo equipo
+    setFormEquipment(null);
     setShowForm(true);
   };
 
