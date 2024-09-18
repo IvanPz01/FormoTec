@@ -14,8 +14,8 @@ export class User {
         this.role = role;
     }
 
-    static async createUser(name: string, password: string, role: string) {
-        const hash = await bcrypt.hash(password, 10);
+    static async createUser(name: string, hash: string, role: string) {
+        console.log('Creating user');
         await db.query('INSERT INTO users (name, password, role) VALUES ($1, $2, $3)', [name, hash, role]);
     }
     static async getUserByName(name: string): Promise<User | null> {

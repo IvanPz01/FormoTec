@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import EquipmentForm from '../Components/EquipmentForm';
+import '../EquipmentList.css'
 
 interface Equipment {
   id: number;
@@ -12,16 +14,32 @@ interface Equipment {
 
 const EquipmentList: React.FC = () => {
   const [equipments, setEquipments] = useState<Equipment[]>([]);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [showForm, setShowForm] = useState<boolean>(false);
+  const [formEquipment, setFormEquipment] = useState<Equipment | null>(null); // Equipo para editar
 
   useEffect(() => {
     const fetchEquipments = async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get('http://localhost:3000/equipments', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setEquipments(res.data);
+      if (token) {
+        try {
+          const decoded = JSON.parse(atob(token.split('.')[1]));
+          setIsAdmin(decoded.role === 'Admin');
+        } catch (e) {
+          console.error('Error decoding token', e);
+        }
+      }
+
+      try {
+        const res = await axios.get('http://localhost:5000/equipamiento/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setEquipments(res.data);
+      } catch (error) {
+        console.error('Error fetching equipment', error);
+      }
     };
 
     fetchEquipments();
@@ -30,20 +48,58 @@ const EquipmentList: React.FC = () => {
   const handleDelete = async (id: number) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.delete(`http://localhost:3000/equipments/${id}`, {
+      await axios.delete(`http://localhost:5000/equipamiento/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       setEquipments(equipments.filter((equipment) => equipment.id !== id));
     } catch (error) {
-      console.error('Error al eliminar el equipo', error);
+      console.error('Error deleting equipment', error);
     }
   };
 
+  const handleEdit = (equipment: Equipment) => {
+    setFormEquipment(equipment);
+    setShowForm(true);
+  };
+
+  const handleAdd = () => {
+    setFormEquipment(null); // Null cuando se está agregando un nuevo equipo
+    setShowForm(true);
+  };
+
+  const handleFormSuccess = () => {
+    setShowForm(false);
+    setFormEquipment(null);
+    const fetchEquipments = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await axios.get('http://localhost:5000/equipamiento/', {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          setEquipments(res.data);
+        } catch (error) {
+          console.error('Error fetching equipment', error);
+        }
+      }
+    };
+
+    fetchEquipments();
+  };
+
   return (
-    <div>
+    <div className="container">
       <h2>Lista de Equipos</h2>
+      {isAdmin && (
+        <button onClick={handleAdd}>
+          {showForm ? 'Cerrar Formulario' : 'Agregar'}
+        </button>
+      )}
+      {showForm && <EquipmentForm onSuccess={handleFormSuccess} equipment={formEquipment} />}
       <ul>
         {equipments.map((equipment) => (
           <li key={equipment.id}>
@@ -52,7 +108,12 @@ const EquipmentList: React.FC = () => {
             <p>Estado: {equipment.status}</p>
             <p>Ubicación: {equipment.location}</p>
             <p>Fecha de Adquisición: {equipment.acquisitionDate}</p>
-            <button onClick={() => handleDelete(equipment.id)}>Eliminar</button>
+            {isAdmin && (
+              <>
+                <button onClick={() => handleEdit(equipment)}>Editar</button>
+                <button className="delete" onClick={() => handleDelete(equipment.id)}>Eliminar</button>
+              </>
+            )}
           </li>
         ))}
       </ul>
@@ -61,4 +122,3 @@ const EquipmentList: React.FC = () => {
 };
 
 export default EquipmentList;
-

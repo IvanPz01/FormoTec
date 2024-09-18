@@ -1,41 +1,72 @@
-import e, { Response, Request } from "express";
+import { Request, Response } from "express";
 import { User } from "../models/userModel";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 export class AuthController {
-    public static async register(req: Request, res: Response) {
-        const { name, password, role } = req.body;
-        if (!name || !password || !role) {
-            return res.status(400).json({ message: "Missing fields" });
-        }
-        try {
-            await User.createUser(name, password, role);
-            res.status(201).json({ message: "User created" });
-        } catch (err) {
-            console.error(err);
-            res.status(500).json({ message: "Internal server error" });
-        }
+
+  public static async register(req: Request, res: Response): Promise<void> {
+    let { name, password, role } = req.body;
+
+    if (!role) {
+        role = "empleado";
     }
-    public static async login(req: Request, res: Response) {
-        const { name, password } = req.body;
-        if (!name || !password) {
-            return res.status(400).json({ message: "Missing fields" });
-        }
-        try {
-            const user = await User.getUserByName(name);
-            if (!user) {
-                return res.status(404).json({ message: "User not found" });
-            }
-            const validate = await bcrypt.compare(password, user.password);
-            if (!validate) {
-                return res.status(401).json({ message: "Invalid password" });
-            }
-            const token = jwt.sign({ id: user.id, role: user.role }, process.env.SECRET_KEY!, { expiresIn: '1h' });
-            return res.json({ token });
-        } catch (err) {
-            console.error(err);
-            res.status(500).json({ message: "Internal server error" });
-        }
+    
+    if (!name || !password) {
+      res.status(400).json({ message: "Faltan campos obligatorios" });
     }
+
+    try {
+        const existingUser = await User.getUserByName(name);
+        if (existingUser) {
+            res.status(409).json({ message: "El usuario ya existe" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await User.createUser(name, hashedPassword, role);
+
+        res.status(201).json({ message: "Usuario creado exitosamente" });
+    } catch (err) {
+        console.error("Error en el registro:", err);
+        res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+
+  public static async login(req: Request, res: Response): Promise<void> {
+    const { name, password } = req.body;
+
+    if (!name || !password) {
+      res.status(400).json({ message: "Faltan campos obligatorios" });
+    }
+
+    try {
+      const user = await User.getUserByName(name);
+      if (!user) {
+        res.status(404).json({ message: "Usuario no encontrado" });
+        return;
+      }
+      
+      console.log("Contraseña proporcionada:", password);
+      console.log("Hash almacenado:", user.password);
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      console.log("¿Contraseña válida?:", isPasswordValid);
+
+      if (!isPasswordValid) {
+        res.status(401).json({ message: "Contraseña incorrecta" });
+        return;
+      }
+      
+      const token = jwt.sign(
+        { id: user.id, role: user.role },
+        process.env.SECRET_KEY!,
+        { expiresIn: '1h' }
+      );
+
+      res.json({ token });
+    } catch (err) {
+      console.error("Error en el inicio de sesión:", err);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
 }
