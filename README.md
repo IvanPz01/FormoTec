@@ -1,4 +1,4 @@
-##Gestión de Inventario de Equipos Informáticos - FORMOTEX
+#Gestión de Inventario de Equipos Informáticos - FORMOTEc
 
 Aplicación web para gestionar el inventario de equipos informáticos de FORMOTEX. Permite realizar operaciones CRUD (Crear, Leer, Actualizar, Eliminar) protegidas por autenticación JWT, con un backend en Node.js y un frontend en React, utilizando PostgreSQL o MongoDB.
 Funcionalidades Clave
